@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">MQTT 剪贴板同步</string>
+    <string name="ime_label">剪贴板同步键盘</string>
+</resources>

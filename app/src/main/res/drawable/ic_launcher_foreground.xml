@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 剪贴板 + 发送箭头：剪贴板内容经 MQTT 同步 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 夹子 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M48,20H60A5,5 0 0 1 65,25V29A5,5 0 0 1 60,34H48A5,5 0 0 1 43,29V25A5,5 0 0 1 48,20Z" />
+
+    <!-- 板身（挖空一条文本行） -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M38,30H70A6,6 0 0 1 76,36V78A6,6 0 0 1 70,84H38A6,6 0 0 1 32,78V36A6,6 0 0 1 38,30ZM42,46H66V51H42Z" />
+
+    <!-- 发送箭头 -->
+    <group
+        android:pivotX="0"
+        android:pivotY="0"
+        android:scaleX="1.1"
+        android:scaleY="1.1"
+        android:translateX="46"
+        android:translateY="55">
+        <path
+            android:fillColor="#FF0A2E3D"
+            android:pathData="M2.01,21L23,12L2.01,3L2,10l15,2l-15,2z" />
+    </group>
+</vector>
