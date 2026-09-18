@@ -6,7 +6,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.R
 import com.example.myapplication.data.BrokerConfig
 import com.example.myapplication.util.BootPermissions
 
@@ -38,6 +40,15 @@ fun ClipboardCard(
         Field("发布主题", cfg.pubTopic) { onChange(cfg.copy(pubTopic = it)) }
         QosRow("发布 QoS", cfg.pubQos) { onChange(cfg.copy(pubQos = it)) }
         SwitchRow("Retain 保留消息", null, cfg.retain) { onChange(cfg.copy(retain = it)) }
+
+        // ---- 快捷入口：文本选择菜单 / 分享菜单（无需输入法豁免） ----
+        Text(
+            text = "快捷入口：任意应用中选中文本后，在弹出菜单里选择「${stringResource(R.string.process_text_label)}」，" +
+                "即可复制到系统剪贴板并立即发送（文本由菜单直接传入，不受后台剪贴板限制）；" +
+                "分享菜单中的「${stringResource(R.string.share_text_label)}」效果相同。",
+            fontSize = 12.sp,
+            color = Color.Gray
+        )
 
         // ---- 后台读取剪贴板的限制说明与输入法通道 ----
         Text("后台读取剪贴板", fontSize = 13.sp, color = Color.Gray)

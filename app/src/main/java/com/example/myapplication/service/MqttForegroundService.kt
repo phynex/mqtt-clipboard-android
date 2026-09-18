@@ -46,6 +46,10 @@ class MqttForegroundService : Service() {
     @Volatile
     private var config: BrokerConfig = BrokerConfig()
 
+    /** 用户显式选中、但尚未连接成功时排队等待发送的文本 */
+    @Volatile
+    private var pendingText: String? = null
+
     override fun onCreate() {
         super.onCreate()
         settings = AppGraph.settings
@@ -67,6 +71,7 @@ class MqttForegroundService : Service() {
         // 状态变化 → 更新唯一一条常驻通知（状态首次变为已连接 / 异常时提示一次）
         statusJob = AppStatusBus.ui.onEach { ui ->
             updateNotification(ui.state, Notifications.shouldAlert(ui.state))
+            if (ui.state.kind == ConnKind.CONNECTED) flushPending()
         }.launchIn(scope)
 
         var firstEmission = true
@@ -104,6 +109,19 @@ class MqttForegroundService : Service() {
                 AppStatusBus.log("重新加载连接参数")
                 engine.reload(config)
                 applyClipboardState(config)
+            }
+
+            ACTION_CLIP_TEXT -> {
+                val text = intent?.getStringExtra(EXTRA_CLIP_TEXT).orEmpty()
+                if (text.isBlank()) {
+                    AppStatusBus.log("忽略空的选中文本")
+                } else {
+                    // 来自文本选择菜单 / 分享菜单的显式同步请求：
+                    // 文本由 Intent 携带，无需读取剪贴板，不受 Android 10+ 后台限制
+                    clipboard?.writeText(text)
+                    startSync(config)
+                    publishManual(text)
+                }
             }
 
             else -> {
@@ -189,6 +207,30 @@ class MqttForegroundService : Service() {
         engine.publish(cfg.pubTopic, text, cfg.pubQos, cfg.retain)
     }
 
+    /**
+     * 发布用户显式选中的文本。
+     * 与 [publishClip] 不同：不受“发送剪贴板变更”开关限制，因为这是明确的单次用户操作；
+     * 未连接时排队，等连接成功后自动补发。
+     */
+    private fun publishManual(text: String) {
+        AppStatusBus.clipOut(text)
+        if (engine.isConnected()) {
+            AppStatusBus.log("选中文本 → 发布到 ${config.pubTopic}")
+            engine.publish(config.pubTopic, text, config.pubQos, config.retain)
+        } else {
+            pendingText = text
+            AppStatusBus.log("已复制到剪贴板，等待连接后发送")
+        }
+    }
+
+    /** 连接成功后补发排队中的文本 */
+    private fun flushPending() {
+        val text = pendingText ?: return
+        pendingText = null
+        AppStatusBus.log("补发排队文本 → ${config.pubTopic}")
+        engine.publish(config.pubTopic, text, config.pubQos, config.retain)
+    }
+
     private fun handleIncoming(topic: String, payload: String) {
         val cfg = config
         if (!cfg.syncClipboardReceive) {
@@ -220,7 +262,26 @@ class MqttForegroundService : Service() {
         const val ACTION_CONNECT = "com.example.myapplication.action.CONNECT"
         const val ACTION_DISCONNECT = "com.example.myapplication.action.DISCONNECT"
         const val ACTION_RELOAD = "com.example.myapplication.action.RELOAD"
+        const val ACTION_CLIP_TEXT = "com.example.myapplication.action.CLIP_TEXT"
         const val EXTRA_CONNECT = "extra_connect"
+        const val EXTRA_CLIP_TEXT = "extra_clip_text"
+
+        /** 文本选择菜单 / 分享菜单入口：复制文本并立即同步。返回是否已交给后台服务 */
+        fun publishText(context: Context, text: String): Boolean {
+            val intent = Intent(context, MqttForegroundService::class.java)
+                .setAction(ACTION_CLIP_TEXT)
+                .putExtra(EXTRA_CLIP_TEXT, text)
+            var launched = false
+            runCatching { ContextCompat.startForegroundService(context, intent) }
+                .onSuccess { launched = true }
+                .onFailure { t ->
+                    Log.w(TAG, "前台服务启动失败，回退普通启动", t)
+                    runCatching { context.startService(intent) }
+                        .onSuccess { launched = true }
+                        .onFailure { AppStatusBus.log("启动后台服务失败：${it.localizedMessage}") }
+                }
+            return launched
+        }
 
         fun start(context: Context, connect: Boolean = true) {
             val intent = Intent(context, MqttForegroundService::class.java)

@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">MQTT 剪贴板同步</string>
     <string name="ime_label">剪贴板同步键盘</string>
+    <!-- 文本选择菜单（复制/粘贴/翻译旁边）显示的项名，尽量短 -->
+    <string name="process_text_label">复制并同步</string>
+    <!-- 分享菜单里显示的项名 -->
+    <string name="share_text_label">同步到电脑</string>
 </resources>

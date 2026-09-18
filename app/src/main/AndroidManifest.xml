@@ -41,6 +41,42 @@
             </intent-filter>
         </activity>
 
+        <!--
+            文本选择菜单入口：在任意应用选中文本后，系统浮动菜单中出现「复制并同步」。
+            文本由 Intent 直接携带（EXTRA_PROCESS_TEXT），不读取剪贴板，
+            因此不受 Android 10+ 后台剪贴板限制影响。
+        -->
+        <activity
+            android:name=".ProcessTextActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:label="@string/process_text_label"
+            android:noHistory="true"
+            android:theme="@style/Theme.MyApplication.Transparent">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <!-- 分享菜单入口：任意应用分享文本时可选择「同步到电脑」 -->
+        <activity-alias
+            android:name=".ShareTextActivity"
+            android:exported="true"
+            android:label="@string/share_text_label"
+            android:targetActivity=".ProcessTextActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity-alias>
+
         <!-- 常驻同步服务：持有 MQTT 连接并监听剪贴板 -->
         <service
             android:name=".service.MqttForegroundService"
