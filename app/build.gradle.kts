@@ -82,3 +82,14 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
+
+/**
+ * 导出固定文件名的发布包：<项目根>/build/release/mqtt-clipbord.apk
+ * 执行：./gradlew exportReleaseApk
+ */
+tasks.register<Copy>("exportReleaseApk") {
+    dependsOn("assembleRelease")
+    from(layout.buildDirectory.file("outputs/apk/release/app-release.apk"))
+    into(rootProject.layout.buildDirectory.dir("release"))
+    rename { "mqtt-clipbord.apk" }
+}
